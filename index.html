@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script type="module">
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
+        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js';
+
+        // Scene
+        const scene = new THREE.Scene();
+
+        // Camera
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 30;
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x404040); // soft white light
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 1, 1000);
+        scene.add(pointLight);
+
+        // Sun
+        const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
+        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+        scene.add(sun);
+
+        // Planets
+        const planets = [];
+
+        function createPlanet(size, color, distance) {
+            const geometry = new THREE.SphereGeometry(size, 32, 32);
+            const material = new THREE.MeshStandardMaterial({ color });
+            const planet = new THREE.Mesh(geometry, material);
+            planet.position.x = distance;
+            scene.add(planet);
+            planets.push({ mesh: planet, distance, speed: 0.01 / Math.sqrt(distance) });
+
+            // Orbit
+            const orbitGeometry = new THREE.RingGeometry(distance - 0.1, distance + 0.1, 64);
+            const orbitMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+            const orbit = new THREE.Mesh(orbitGeometry, orbitMaterial);
+            orbit.rotation.x = -Math.PI / 2;
+            scene.add(orbit);
+
+            return planet;
+        }
+
+        createPlanet(0.38, 0xaaaaaa, 7); // Mercury
+        createPlanet(0.95, 0xe5e5e5, 10); // Venus
+        createPlanet(1, 0x0000ff, 13);    // Earth
+        createPlanet(0.53, 0xff0000, 16); // Mars
+        createPlanet(4, 0xffa500, 22);   // Jupiter
+
+        // Saturn
+        const saturn = createPlanet(3.5, 0xf0e68c, 28);
+        const ringGeometry = new THREE.RingGeometry(4, 5, 64);
+        const ringMaterial = new THREE.MeshBasicMaterial({ color: 0x808080, side: THREE.DoubleSide });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.rotation.x = -Math.PI / 2;
+        saturn.add(ring);
+
+
+        createPlanet(2, 0xadd8e6, 34);   // Uranus
+        createPlanet(1.9, 0x00008b, 38); // Neptune
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            controls.update();
+
+            sun.rotation.y += 0.001;
+
+            const time = Date.now() * 0.0001;
+
+            planets.forEach(planetData => {
+                const { mesh, distance, speed } = planetData;
+                const angle = time * speed;
+                mesh.position.x = Math.cos(angle) * distance;
+                mesh.position.z = Math.sin(angle) * distance;
+                mesh.rotation.y += 0.01;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
